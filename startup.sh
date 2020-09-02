@@ -76,39 +76,12 @@ echo 'installing chrome'
 wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 sudo dpkg -i google-chrome-stable_current_amd64.deb
 
-echo 'installing nvm' 
-sh -c "$(curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash)"
-
-export NVM_DIR="$HOME/.nvm" && (
-git clone https://github.com/creationix/nvm.git "$NVM_DIR"
-cd "$NVM_DIR"
-git checkout `git describe --abbrev=0 --tags --match "v[0-9]*" $(git rev-list --tags --max-count=1)`
-) && \. "$NVM_DIR/nvm.sh"
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-
 source ~/.zshrc
-nvm --version
-nvm install 12
-nvm alias default 12
-node --version
-npm --version
 
 echo 'installing autosuggestions' 
 git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
 echo "source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" >> ~/.zshrc
-source ~/.zshrc
-
-echo 'installing theme'
-sudo apt install fonts-firacode -y
-wget -O ~/.oh-my-zsh/themes/node.zsh-theme https://raw.githubusercontent.com/skuridin/oh-my-zsh-node-theme/master/node.zsh-theme 
-sed -i 's/.*ZSH_THEME=.*/ZSH_THEME="node"/g' ~/.zshrc
-
-echo 'installing meet franz' 
-wget https://github.com/meetfranz/franz/releases/download/v5.1.0/franz_5.1.0_amd64.deb -O franz.deb
-sudo dpkg -i franz.debchristian-kohler.path-intellisense
-sudo apt-get install -y -f 
+source ~/.zshrc 
 
 echo 'installing slack' 
 wget https://downloads.slack-edge.com/linux_releases/slack-desktop-3.3.8-amd64.deb
@@ -186,22 +159,12 @@ curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64
 sudo dpkg -i session-manager-plugin.deb
 session-manager-plugin --version
 
-echo 'installing fzf'
-git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
-~/.fzf/install --all
-
-echo 'installing brave'
-curl -s https://brave-browser-apt-release.s3.brave.com/brave-core.asc | sudo apt-key --keyring /etc/apt/trusted.gpg.d/brave-browser-release.gpg add -
-source /etc/os-release
-echo "deb [arch=amd64] https://brave-browser-apt-release.s3.brave.com/ $UBUNTU_CODENAME main" | sudo tee /etc/apt/sources.list.d/brave-browser-release-${UBUNTU_CODENAME}.list
-sudo apt update
-sudo apt install brave-keyring brave-browser
-
 echo 'installing dbeaver'
 wget -c https://dbeaver.io/files/6.0.0/dbeaver-ce_6.0.0_amd64.deb
 sudo dpkg -i dbeaver-ce_6.0.0_amd64.deb
 sudo apt-get install -f
 
+echo 'should install conda? (y/n)'
 read install_conda
 if echo "$install_conda" | grep -iq "^y" ;then
 	# Check if Anaconda is already installed
@@ -209,29 +172,32 @@ if echo "$install_conda" | grep -iq "^y" ;then
 	    echo "Anaconda is already installed, skipping installation"
 	    echo "To reinstall, delete the Anaconda install directory and remove from PATH as well"
 	else
-	    spatialPrint "Installing the latest Anaconda Python in /opt/anaconda3"
+	    echo "Installing the latest Anaconda Python in /opt/anaconda3"
 	    continuum_website=https://repo.continuum.io/archive/
 	    # Stepwise filtering of the html at $continuum_website
 	    # Get the topmost line that matches our requirements, extract the file name.
 	    latest_anaconda_setup=$(wget -q -O - $continuum_website index.html | grep "Anaconda3-" | grep "Linux" | grep "86_64" | head -n 1 | cut -d \" -f 2)
-	    aria2c --file-allocation=none -c -x 10 -s 10 -o anacondaInstallScript.sh --dir ./extras ${continuum_website}${latest_anaconda_setup}
+	    curl -O -J -L $continuum_website$latest_anaconda_setup
 	    sudo mkdir -p /opt/anaconda3 && sudo chmod ugo+w /opt/anaconda3
-	    execute bash ./extras/anacondaInstallScript.sh -f -b -p /opt/anaconda3
+	    sudo sh $latest_anaconda_setup -b -p /opt/anaconda3
+# 	    aria2c --file-allocation=none -c -x 10 -s 10 -o anacondaInstallScript.sh --dir ./extras ${continuum_website}${latest_anaconda_setup}
+# 	    sudo mkdir -p /opt/anaconda3 && sudo chmod ugo+w /opt/anaconda3
+# 	    execute bash ./extras/anacondaInstallScript.sh -f -b -p /opt/anaconda3
 
-	    spatialPrint "Setting up your anaconda"
-	    execute /opt/anaconda3/bin/conda update conda -y
-	    execute /opt/anaconda3/bin/conda clean --all -y
-	    execute /opt/anaconda3/bin/conda install ipython -y
+	    echo "Setting up your anaconda"
+	    /opt/anaconda3/bin/conda update conda -y
+	    /opt/anaconda3/bin/conda clean --all -y
+	    /opt/anaconda3/bin/conda install ipython -y
 
-	    execute /opt/anaconda3/bin/conda install libgcc -y
-	    execute /opt/anaconda3/bin/pip install numpy scipy matplotlib scikit-learn scikit-image jupyter notebook pandas h5py cython jupyterlab
-	    execute /opt/anaconda3/bin/pip install msgpack
-	    execute /opt/anaconda3/bin/conda install line_profiler -y
+	    /opt/anaconda3/bin/conda install libgcc -y
+	    opt/anaconda3/bin/pip install numpy scipy matplotlib scikit-learn scikit-image jupyter notebook pandas h5py cython jupyterlab
+	    opt/anaconda3/bin/pip install msgpack
+	    opt/anaconda3/bin/conda install line_profiler -y
 	    sed -i.bak "/anaconda3/d" ~/.zshrc
 
 	    /opt/anaconda3/bin/conda info -a
 
-	    spatialPrint "Adding anaconda to path variables"
+	    echo "Adding anaconda to path variables"
 	    {
 		echo "# Anaconda Python. Change the \"conda activate base\" to whichever environment you would like to activate by default"
 		echo ". /opt/anaconda3/etc/profile.d/conda.sh"
